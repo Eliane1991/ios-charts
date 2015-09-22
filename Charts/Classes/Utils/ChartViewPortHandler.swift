@@ -28,6 +28,9 @@ public class ChartViewPortHandler: NSObject
     /// minimum scale value on the y-axis
     private var _minScaleY = CGFloat(1.0)
     
+    /// maximum scale value on the y-axis
+    private var _maxScaleY = CGFloat.max
+    
     /// minimum scale value on the x-axis
     private var _minScaleX = CGFloat(1.0)
     
@@ -39,6 +42,9 @@ public class ChartViewPortHandler: NSObject
     
     /// contains the current scale factor of the y-axis
     private var _scaleY = CGFloat(1.0)
+    
+    private var _transX = CGFloat(0.0)
+    private var _transY = CGFloat(0.0)
     
     /// offset that allows the chart to be dragged over its bounds on the x-axis
     private var _transOffsetX = CGFloat(0.0)
@@ -214,7 +220,8 @@ public class ChartViewPortHandler: NSObject
         _scaleX = min(max(_minScaleX, matrix.a), _maxScaleX)
         
         // min scale-y is 1
-        _scaleY = max(_minScaleY, matrix.d)
+        _scaleY = min(max(_minScaleY,  matrix.d), _maxScaleY)
+        
         
         var width: CGFloat = 0.0
         var height: CGFloat = 0.0
@@ -227,13 +234,15 @@ public class ChartViewPortHandler: NSObject
         
         let maxTransX = -width * (_scaleX - 1.0)
         let newTransX = min(max(matrix.tx, maxTransX - _transOffsetX), _transOffsetX)
+        _transX = newTransX;
         
         let maxTransY = height * (_scaleY - 1.0)
         let newTransY = max(min(matrix.ty, maxTransY + _transOffsetY), -_transOffsetY)
+        _transY = newTransY;
         
-        matrix.tx = newTransX
+        matrix.tx = _transX
         matrix.a = _scaleX
-        matrix.ty = newTransY
+        matrix.ty = _transY
         matrix.d = _scaleY
     }
     
@@ -269,6 +278,14 @@ public class ChartViewPortHandler: NSObject
         
         _minScaleX = newMin
         _maxScaleX = maxScaleX
+        
+        limitTransAndScale(matrix: &_touchMatrix, content: _contentRect)
+    }
+    
+    
+    public func setMaximumScaleY(yScale: CGFloat)
+    {
+        _maxScaleY = yScale;
         
         limitTransAndScale(matrix: &_touchMatrix, content: _contentRect)
     }
@@ -362,6 +379,16 @@ public class ChartViewPortHandler: NSObject
     public var scaleY: CGFloat
     {
         return _scaleY
+    }
+    
+    public var transX: CGFloat
+    {
+        return _transX
+    }
+    
+    public var transY: CGFloat
+    {
+        return _transY
     }
     
     /// if the chart is fully zoomed out, return true
